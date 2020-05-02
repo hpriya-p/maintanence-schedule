@@ -3,6 +3,7 @@ COPY src .
 COPY instances .
 
 # Add Julia libraries
-ADD REQUIRE /.julia/v1.1/REQUIRE
+RUN for i in $(cat REQUIRE); do julia -e "using Pkg; Pkg.add($i); Pkg.build($i)"; done
+
 RUN julia -e "using Pkg; Pkg.resolve()"
 RUN julia solve_ip.jl "example1.json"
