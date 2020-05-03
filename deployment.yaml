@@ -11,4 +11,4 @@ spec:
     - solve_ip.jl
     - A_01.json
     - out1.txt
-  restartPolicy: never
+  restartPolicy: Never
