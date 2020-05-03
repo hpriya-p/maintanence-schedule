@@ -67,4 +67,5 @@ jobs:
     - name: Deploy
       run: |
         gcloud container clusters get-credentials $GKE_CLUSTER --zone $GKE_ZONE --project $GKE_PROJECT
+        kubectl delete -f deployment.yaml --ignore-not-found
         kubectl apply -f deployment.yaml
