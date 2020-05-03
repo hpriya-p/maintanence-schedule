@@ -6,6 +6,9 @@ spec:
   containers:
   - name: run-model-a01
     image: gcr.io/maintanence-scheduling/gke-test:1.1.0
+    resources:
+      limits:
+        memory: "500Mi"
     args:
     - julia
     - solve_ip.jl
