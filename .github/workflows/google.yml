@@ -18,7 +18,7 @@ on:
 env:
   GKE_PROJECT: "maintanence-scheduling"
   GITHUB_SHA: ${{ github.sha }}
-  GKE_ZONE: us-west1-a
+  GKE_ZONE: northamerica-northeast1-b
   GKE_CLUSTER: ip-model-cluser	
   IMAGE: gke-test
   REGISTRY_HOSTNAME: gcr.io
