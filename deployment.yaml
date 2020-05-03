@@ -5,7 +5,7 @@ metadata:
 spec:
   containers:
   - name: run-model-a01
-    image: gcr.io/maintanence-scheduling/gke-test:1.1.0
+    image: gcr.io/maintanence-scheduling/gke-test:1.1.1
     resources:
       limits:
         memory: "250Mi"
