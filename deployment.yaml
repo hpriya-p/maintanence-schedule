@@ -8,7 +8,7 @@ spec:
     image: gcr.io/maintanence-scheduling/gke-test:1.1.0
     resources:
       limits:
-        memory: "500Mi"
+        memory: "250Mi"
     args:
     - julia
     - solve_ip.jl
