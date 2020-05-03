@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: run-model-ex1
+  name: run-model-a01
 spec:
   containers:
-  - name: run-model-ex1
-    image: gcr.io/maintanence-scheduling/gke-test:1.0.0
+  - name: run-model-a01
+    image: gcr.io/maintanence-scheduling/gke-test:1.1.0
     args:
     - julia
     - solve_ip.jl
-    - example1.json
-    - out.txt
-
+    - A_01.json
+    - out1.txt
+  resetPolicy: never
