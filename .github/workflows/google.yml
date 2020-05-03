@@ -23,7 +23,7 @@ env:
   IMAGE: gke-test
   REGISTRY_HOSTNAME: gcr.io
   DEPLOYMENT_NAME: gke-test
-
+  IMAGE_VERSION: "1.0.0"
 jobs:
   setup-build-publish-deploy:
     name: Setup, Build, Publish, and Deploy
@@ -48,7 +48,10 @@ jobs:
     # Build the Docker image
     - name: Build
       run: |
-        docker build -t "$REGISTRY_HOSTNAME"/"$GKE_PROJECT"/"$IMAGE":"latest"
+        docker build -t "$REGISTRY_HOSTNAME"/"$GKE_PROJECT"/"$IMAGE":"$IMAGE_VERSION" \
+          --build-arg GITHUB_SHA="$GITHUB_SHA" \
+          --build-arg GITHUB_REF="$GITHUB_REF" .
+
     # Push the Docker image to Google Container Registry
     - name: Publish
       run: |
