@@ -159,6 +159,7 @@ function writeToFile(filename, y, T, map)
     open(filename, "w") do f
         for (key, val) in pairs(get(map, "Interventions", []))
             write(f, string(key, " ",argmax(y[val, 1:T]), "\n"))
+            println(string(key, " ",argmax(y[val, 1:T])))
         end
     end
 
