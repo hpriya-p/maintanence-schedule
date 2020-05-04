@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: run-model-a07
+  name: run-model-a12
 spec:
   containers:
-  - name: run-model-a07
-    image: gcr.io/maintanence-scheduling/gke-test:1.2.7
+  - name: run-model-a12
+    image: gcr.io/maintanence-scheduling/gke-test:1.2.12
     args:
     - julia
     - solve_ip.jl
-    - A_07.json
-    - out7.txt
+    - A_12.json
+    - out12.txt
   restartPolicy: Never
