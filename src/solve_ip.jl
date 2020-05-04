@@ -100,6 +100,7 @@ function constructMILPfromFile(filename)
     mean_risk_t = [sum(risk[s, t1] for s in 1:getindex(St, t1)) / getindex(St, t1) for t1 in 1:T]
     mean_risk = sum(getindex(mean_risk_t, t1) for t1 in 1:T) / T
     quant_risk = [q[t1] - getindex(mean_risk_t, t1) for t1 in 1:T]
+    println(string("T:", T, " n:", n, " S:", S, " C:", C))
     print("Constraint 1...")
     [@constraint(j_model, sum(y[i, t] for t in 1:T) == 1) for i in 1:n]
     println("Complete")

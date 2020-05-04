@@ -1,6 +1,6 @@
 FROM julia:latest
 COPY src .
-COPY instances .
+COPY instances/A_09.json .
 COPY REQUIRE .
 COPY deployment.yaml .
 # Add Julia libraries
