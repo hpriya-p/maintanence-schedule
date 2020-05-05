@@ -40,7 +40,6 @@ function constructMILPfromFile(filename)
         setindex!(deltas, get(int_values, "Delta", []), get(interventions_dict, intervention, 1), 1:T)
         ctr += 1
     end
-    println(deltas)
 
     risk_arr = zeros(n, T, T, S) # (intervention, current time, start time, scenario)
 
@@ -63,7 +62,6 @@ function constructMILPfromFile(filename)
         end
         ctr += 1
     end
-    println(risk_arr)
     M = max(risk_arr...) + 1
 
     r_arr = zeros(n, T, T, C) # (intervention, current time, start time, resource)
