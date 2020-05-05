@@ -23,7 +23,7 @@ env:
   IMAGE: gke-test
   REGISTRY_HOSTNAME: gcr.io
   DEPLOYMENT_NAME: gke-test
-  IMAGE_VERSION: "1.4.12"
+  IMAGE_VERSION: "1.4.1"
 jobs:
   setup-build-publish-deploy:
     name: Setup, Build, Publish, and Deploy
