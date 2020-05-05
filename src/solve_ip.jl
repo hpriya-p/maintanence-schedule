@@ -27,10 +27,9 @@ function constructMILPfromFile(filename)
     tau = get(parsed_file, QUANTILE, 0)
     alpha = get(parsed_file, ALPHA, 0)
 
-    risk_arr = zeros(n, T, T, S) # (intervention, current time, start time, scenario)
-# Populate risk_arr
     interventions_dict = Dict()
     ctr = 1
+    deltas = zeros(n, T)
     for (intervention, int_values) in pairs(get(parsed_file, INTERVENTIONS, []))
         inter = ctr
         if (haskey(interventions_dict, intervention))
@@ -38,16 +37,33 @@ function constructMILPfromFile(filename)
         else
             interventions_dict[intervention] = ctr
         end
+        setindex!(deltas, get(int_values, "Delta", []), get(interventions_dict, intervention, 1), 1:T)
+        ctr += 1
+    end
+    println(deltas)
+
+    risk_arr = zeros(n, T, T, S) # (intervention, current time, start time, scenario)
+
+    # Populate risk_arr
+
+    for (intervention, int_values) in pairs(get(parsed_file, INTERVENTIONS, []))
+        inter = get(interventions_dict, intervention, 1)
         for (curtime, ctime_values) in pairs(get(int_values, "risk", []))
+            curtime = parse(Int64, curtime)
             for (start_time, stime_values) in pairs(ctime_values)
-                for s in 1:getindex(St, parse(Int64, curtime))
-                    setindex!(risk_arr, stime_values[s], inter, parse(Int64, curtime), parse(Int64, start_time), s)
+                start_time = parse(Int64, start_time)
+                for s in 1:getindex(St, curtime)
+                    if(start_time > curtime || start_time + deltas[inter, start_time] < curtime )
+                        setindex!(risk_arr, 0, inter, curtime, start_time, s)
+                    else
+                        setindex!(risk_arr, stime_values[s], inter, curtime, start_time, s)
+                    end
                 end
             end
         end
         ctr += 1
     end
-
+    println(risk_arr)
     M = max(risk_arr...) + 1
 
     r_arr = zeros(n, T, T, C) # (intervention, current time, start time, resource)
@@ -64,8 +80,15 @@ function constructMILPfromFile(filename)
             end
 
             for (curr_time, curr_time_values) in pairs(resource_values)
+                curr_time = parse(Int64, curr_time)
                 for (start_time, start_time_load) in pairs(curr_time_values)
-                    setindex!(r_arr, start_time_load, get(interventions_dict, intervention, 1), parse(Int64, curr_time), parse(Int64, start_time), res)
+                    start_time = parse(Int64, start_time)
+                    inter = get(interventions_dict, intervention, 1)
+                    if(start_time > curr_time || start_time + deltas[inter, start_time] < curr_time )
+                        setindex!(r_arr, 0, inter, curr_time, start_time, res)
+                    else
+                        setindex!(r_arr, start_time_load, inter, curr_time, start_time, res)
+                    end
                 end
             end
             ctr += 1
@@ -82,17 +105,12 @@ function constructMILPfromFile(filename)
         setindex!(l, get(res_values, "min", []), get(resources_dict, res, 1), 1:T)
     end
 
-    deltas = zeros(n, T)
-    for (intervention, int_values) in pairs(get(parsed_file, INTERVENTIONS, []))
-        setindex!(deltas, get(int_values, "Delta", []), get(interventions_dict, intervention, 1), 1:T)
-    end
-    println(deltas)
-
+   
 # Construct JuMP Model
     j_model = Model()
     @variable(j_model, x[1:n, 1:T], Bin)
     @variable(j_model, y[1:n, 1:T], Bin)
-    @variable(j_model, z[1:n, 1:T, 1:T], Bin) # of the form z[intervention, current time, start time]
+    @variable(j_model, z[1:n, 1:T], Bin) # of the form z[intervention, current time]
     @variable(j_model, risk[1:S, 1:T])
     @variable(j_model, w[1:S, 1:T], Bin)
     @variable(j_model, q[1:T] >= 0)
@@ -114,16 +132,16 @@ function constructMILPfromFile(filename)
     [@constraint(j_model, sum((deltas[i, j] + j)* y[i, j] for j in 1:T) <=t  + (T+1)*x[i,t]) for t in 1:T for i in 1:n]
     println("Complete")
     print("Constraint 5...")
-    [@constraint(j_model, z[i, t1, t2] >= y[i, t2] + sum(y[i, j] for j in 1:t1) + x[i, t1] - 2) for i in 1:n for t1 in 1:T for t2 in 1:T]
+    [@constraint(j_model, z[i, t1] >= sum(y[i, j] for j in 1:t1) + x[i, t1] - 1) for i in 1:n for t1 in 1:T]
     println("Complete")
     print("Constraint 6...")
-    [@constraint(j_model, 3* z[i, t1, t2] <= y[i, t2] + sum(y[i, j] for j in 1:t1) + x[i, t1]) for i in 1:n for t1 in 1:T for t2 in 1:T]
+    [@constraint(j_model, 2* z[i, t1] <=  sum(y[i, j] for j in 1:t1) + x[i, t1]) for i in 1:n for t1 in 1:T]
     println("Complete")
     print("Constraint 7...")
-    [@constraint(j_model, sum(getindex(r_arr, i, t1, t2, c) * z[i, t1, t2] for i in 1:n for t2 in 1:T) >= l[c, t1])  for t1 in 1:T for c in 1:C]
+    [@constraint(j_model, sum(getindex(r_arr, i, t1, t2, c)*y[i, t2] for i in 1:n for t2 in 1:T) >= l[c, t1])  for t1 in 1:T for c in 1:C]
     println("Complete")
     print("Constraint 8...")
-    [@constraint(j_model, sum(getindex(r_arr, i, t1, t2, c) * z[i, t1, t2] for i in 1:n for t2 in 1:T) <= u[c, t1])  for t1 in 1:T for c in 1:C]
+    [@constraint(j_model, sum(getindex(r_arr, i, t1, t2, c)*y[i, t2] for i in 1:n for t2 in 1:T) <= u[c, t1])  for t1 in 1:T for c in 1:C]
     println("Complete")
     print("Constraint 9...")
     for (exc, exc_values) in pairs(get(parsed_file, EXCLUSIONS, []))
@@ -134,14 +152,14 @@ function constructMILPfromFile(filename)
         if(length(season_vals) > 0 && season_vals[1] isa String)
             season_vals = [parse(Int64, x) for x in season_vals]
         end
-        [@constraint(j_model, sum(z[i1, t, j] for j in 1:t) + sum(z[i2, t, k] for k in 1:t) <= 1) for t in season_vals]
+        [@constraint(j_model, z[i1, t] + z[i2, t] <= 1) for t in season_vals]
     end
     println("Complete")
     print("Constraint 10...")
     [@constraint(j_model, sum(w[s, t1] for s in 1:getindex(St, t1)) >= tau * getindex(St, t1)) for t1 in 1:T]
     println("Complete")
     print("Constraint 11...")
-    [@constraint(j_model, risk[s, t1] == sum(getindex(risk_arr, i, t1, t2, s) * z[i, t1, t2] for i in 1:n for t2 in 1:T)) for t1 in 1:T for s in 1:S]
+    [@constraint(j_model, risk[s, t1] == sum(getindex(risk_arr, i, t1, t2, s)*y[i, t2] for i in 1:n for t2 in 1:T)) for t1 in 1:T for s in 1:S]
     println("Complete")
     print("Constraint 12...")
     [@constraint(j_model, q[t1] >= risk[s, t1] - M * (1 - w[s, t1])) for s in 1:S for t1 in 1:T]
@@ -170,6 +188,7 @@ function main(args)
     println(args)
 milp_model, var_dict, mappings = constructMILPfromFile(args[1])
 println("Constructed MILP Model")
+print(milp_model)
 set_optimizer(milp_model, Cbc.Optimizer)
 optimize!(milp_model)
 y = value.(get(var_dict, "y", []))
