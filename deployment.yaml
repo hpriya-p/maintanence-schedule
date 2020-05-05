@@ -5,10 +5,10 @@ metadata:
 spec:
   containers:
   - name: run-model-a03
-    image: gcr.io/maintanence-scheduling/gke-test:1.3.3
+    image: gcr.io/maintanence-scheduling/gke-test:1.3.9
     args:
     - julia
     - solve_ip.jl
-    - A_03.json
-    - out03.txt
+    - A_09.json
+    - out09.txt
   restartPolicy: Never
